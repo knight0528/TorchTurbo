@@ -531,6 +531,22 @@ class TorchTurboEngine:
             self.config.backend.value,
         )
 
+    def get_local_hf_state_dict(self, model: nn.Module) -> dict[str, Any]:
+        """Return this rank's live HF tensors for in-memory exchange."""
+        if self.model_name_or_path is None:
+            raise RuntimeError("Cannot export weights before prepare_model().")
+        return self.checkpoint.get_local_hf_state_dict(
+            model, self.model_name_or_path
+        )
+
+    def get_local_hf_weight_delta(self, model: nn.Module) -> Any:
+        """Return a bit-exact sparse delta since the previous export."""
+        if self.model_name_or_path is None:
+            raise RuntimeError("Cannot export weights before prepare_model().")
+        return self.checkpoint.get_local_hf_weight_delta(
+            model, self.model_name_or_path
+        )
+
     def save_optimizer_and_scheduler(
         self,
         model: nn.Module,

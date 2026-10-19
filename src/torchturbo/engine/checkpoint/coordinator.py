@@ -108,6 +108,24 @@ class CheckpointCoordinator:
                 )
         return formats
 
+    def get_local_hf_state_dict(
+        self, model: nn.Module, source_path: str
+    ) -> dict[str, Any]:
+        return self._manager.get_local_hf_state_dict(
+            model,
+            source_path,
+            weight_converter=self._weight_converter(model, source_path),
+        )
+
+    def get_local_hf_weight_delta(
+        self, model: nn.Module, source_path: str
+    ) -> Any:
+        return self._manager.get_local_hf_weight_delta(
+            model,
+            source_path,
+            weight_converter=self._weight_converter(model, source_path),
+        )
+
     def load_model(
         self,
         model: nn.Module,

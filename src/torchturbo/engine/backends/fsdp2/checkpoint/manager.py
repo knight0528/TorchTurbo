@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
     from torchturbo.models.weight_converter import BaseWeightConverter
     from torchturbo.runtime import DeviceRuntime
+    from .weight_delta import WeightDelta
 
 
 class FSDP2CheckpointManager(BaseCheckpointManager):
@@ -53,6 +54,8 @@ class FSDP2CheckpointManager(BaseCheckpointManager):
             ep_size=parallel_context["ep"]["ep_size"],
             edp_mesh=mesh["edp"],
         )
+        self._local_hf_saver = None
+        self._local_hf_saver_key = None
 
     def native_model_dir(self, checkpoint_dir: str) -> str:
         return os.path.join(checkpoint_dir, MODEL_DCP_DIR)
@@ -89,6 +92,30 @@ class FSDP2CheckpointManager(BaseCheckpointManager):
         weight_converter: BaseWeightConverter,
     ) -> None:
         self._hf_saver(model, source_path, weight_converter).save_model(output_dir)
+
+    def get_local_hf_state_dict(
+        self,
+        model: nn.Module,
+        source_path: str,
+        *,
+        weight_converter: BaseWeightConverter,
+    ) -> dict[str, Any]:
+        saver = self._get_local_hf_saver(
+            model, source_path, weight_converter
+        )
+        return saver.get_local_hf_state_dict()
+
+    def get_local_hf_weight_delta(
+        self,
+        model: nn.Module,
+        source_path: str,
+        *,
+        weight_converter: BaseWeightConverter,
+    ) -> WeightDelta:
+        saver = self._get_local_hf_saver(
+            model, source_path, weight_converter
+        )
+        return saver.get_local_hf_weight_delta()
 
     def save_native(self, model: nn.Module, output_dir: str) -> None:
         self._dcp.save_model(model, output_dir)
@@ -144,3 +171,17 @@ class FSDP2CheckpointManager(BaseCheckpointManager):
             path=source_path,
             is_cpu_offload=self._cpu_offload,
         )
+
+    def _get_local_hf_saver(
+        self,
+        model: nn.Module,
+        source_path: str,
+        converter: BaseWeightConverter,
+    ) -> ShardedParamManager:
+        key = (model, source_path, converter)
+        if self._local_hf_saver_key != key:
+            self._local_hf_saver = self._hf_saver(
+                model, source_path, converter
+            )
+            self._local_hf_saver_key = key
+        return self._local_hf_saver

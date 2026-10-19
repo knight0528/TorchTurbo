@@ -17,6 +17,8 @@ from torchturbo.engine.peft.weights import apply_lora_delta, build_lora_delta_ma
 from torchturbo.engine.utils import is_peft_adapter_param, strip_peft_prefix
 from torchturbo.logging import get_logger
 
+from .weight_delta import WeightDelta, diff_state_dict
+
 from ....checkpoint.layout import HF_INDEX_FILE, save_json, sync_directory
 from ....checkpoint.distributed import collective_check, rank_zero_call
 
@@ -120,6 +122,7 @@ class ShardedParamManager:
         )
         self.param_to_filename = self._src_weight_map
         self.local_params = self._build_meta_info()
+        self._hf_delta_baseline = None
         self._lora_delta_map = build_lora_delta_map(model)
         if self._lora_delta_map:
             logger.info_rank0(
@@ -478,6 +481,27 @@ class ShardedParamManager:
 
     def get_local_hf_state_dict(self):
         return self._get_local_hf_state_dict(self.local_params)
+
+    def get_local_hf_weight_delta(self) -> WeightDelta:
+        """Export local HF weights and diff them against the last sync."""
+        current = self.get_local_hf_state_dict()
+        if self._hf_delta_baseline is None:
+            self._hf_delta_baseline = {
+                name: tensor.clone() for name, tensor in current.items()
+            }
+            total_elements = sum(
+                tensor.numel() for tensor in current.values()
+            )
+            return WeightDelta(
+                is_seed=True,
+                full_state=current,
+                changed_elements=total_elements,
+                total_elements=total_elements,
+            )
+
+        delta = diff_state_dict(self._hf_delta_baseline, current)
+        self._hf_delta_baseline = current
+        return delta
 
     def save_model(self, save_path):
         save_path = Path(save_path)
