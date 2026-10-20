@@ -1,6 +1,6 @@
 # 量化 checkpoint 转 BF16（离线反量化）
 
-本目录提供 DeepSeek V4、DeepSeek V4.1 Flash 和 Kimi-K2.6 checkpoint 的离线反量化工具。它们根据 FP8、MXFP4、FP4 或 packed INT4 量化值及对应的 scale 等信息生成 BF16 权重，输出可以被当前 BF16 训练链路直接加载的 Hugging Face checkpoint。
+本目录提供 DeepSeek V4、DeepSeek V4.1 Flash、Bailing/Ling 和 Kimi-K2.6 checkpoint 的离线反量化工具。它们根据 FP8、MXFP4、FP4 或 packed INT4 量化值及对应的 scale 等信息生成 BF16 权重，输出可以被当前 BF16 训练链路直接加载的 Hugging Face checkpoint。
 
 ## 1. 使用说明
 
@@ -34,6 +34,14 @@ pip install compressed-tensors
 python scripts/dequant/kimik26.py \
   --model-dir /path/to/kimi-k2.6 \
   --output-dir /path/to/kimi-k2.6-bf16
+```
+
+### 1.4 Bailing/Ling：FP8 block-wise 转 BF16
+
+```bash
+python scripts/dequant/bailing.py \
+  --input-fp8-hf-path /path/to/ling-flash \
+  --output-hf-path /path/to/ling-flash-bf16
 ```
 
 ## 2. 反量化原理
@@ -157,6 +165,12 @@ classDiagram
 1. 从顶层 `quantization_config` 或 `text_config.quantization_config` 读取 `group_size`。
 2. 按 `.weight_packed`、`.weight_scale` 和 `.weight_shape` 收集一个量化权重的三个组件，缺少任一组件都会失败。
 3. 使用 `compressed-tensors` 解包 4-bit 权重，并根据 `group_size` 展开 scale。
+
+#### 3.2.4 Bailing/Ling
+
+1. 在 index 中寻找同前缀的 `.weight` 和 `.weight_scale_inv`。
+2. FP8 E4M3 权重按 `128 x 128` block 展开 BF16/FP32 scale。
+3. `modules_to_not_convert` 对应的未量化 BF16 权重按普通 tensor 直接复制。
 
 ### 3.3 离线转换流程
 
