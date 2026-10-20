@@ -6,7 +6,7 @@ set -eux
 
 MODEL=${MODEL:-/sfs_turbo/models/Ling-3.1-flash-bf16}
 OUTPUT_DIR=${OUTPUT_DIR:-/sfs_turbo/zss02308789/1020/output/ling31-swift-sft}
-DATASET=${DATASET:-/sfs_turbo/zss02308789/1020/data/dapo-math-17k-swift.jsonl}
+DATASET=${DATASET:-/sfs_turbo/zss02308789/science.jsonl}
 SEQ_LEN=${SEQ_LEN:-8192}
 FINETUNING_TYPE=${FINETUNING_TYPE:-lora}
 TT_CONFIG=${TT_CONFIG:-"$(dirname "$0")/ling31_swift_sft.yaml"}
