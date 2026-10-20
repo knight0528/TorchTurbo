@@ -19,6 +19,7 @@ import dequantize  # noqa: E402
 import deepseekv4  # noqa: E402
 import deepseekv4_1  # noqa: E402
 import kimik26  # noqa: E402
+import bailing  # noqa: E402
 
 
 def _write_index(model_dir: Path, weight_map: dict[str, str]) -> None:
@@ -151,6 +152,76 @@ def test_dequantize_deepseek_fp8():
     torch.testing.assert_close(
         result.float(), torch.tensor([[2.0]]), rtol=0, atol=0
     )
+
+
+def test_bailing_resolves_and_dequantizes_fp8_block_scale():
+    keys = {
+        "direct.weight": "direct.safetensors",
+        "bailing.weight": "weight.safetensors",
+        "bailing.weight_scale_inv": "scale.safetensors",
+    }
+    sources = bailing.BailingMoeV3Format().resolve_sources(keys)
+    weight = torch.tensor(
+        [[1, 2], [3, 4]], dtype=torch.float8_e4m3fn
+    )
+    scale = torch.tensor([[2.0]], dtype=torch.float32)
+
+    result = bailing.BailingMoeV3Format.dequantize_weight(weight, scale)
+
+    assert not sources["direct.weight"].quantized
+    assert sources["bailing.weight"].quantized
+    assert sources["bailing.weight"].physical_keys == (
+        "bailing.weight",
+        "bailing.weight_scale_inv",
+    )
+    assert result.dtype is torch.bfloat16
+    torch.testing.assert_close(
+        result.float(),
+        torch.tensor([[2.0, 4.0], [6.0, 8.0]]),
+        rtol=0,
+        atol=0,
+    )
+
+
+def test_bailing_converter_outputs_bf16_checkpoint(tmp_path):
+    source = tmp_path / "source"
+    output = tmp_path / "output"
+    source.mkdir()
+    weight_key = "model.layers.0.attention.q_proj.weight"
+    scale_key = weight_key + "_scale_inv"
+    direct_key = "model.layers.72.eh_proj.weight"
+    tensors = {
+        weight_key: torch.tensor(
+            [[1, 2], [3, 4]], dtype=torch.float8_e4m3fn
+        ),
+        scale_key: torch.tensor([[2.0]], dtype=torch.float32),
+        direct_key: torch.ones(2, 3, dtype=torch.bfloat16),
+    }
+    save_file(tensors, source / "model.safetensors")
+    _write_index(source, {key: "model.safetensors" for key in tensors})
+    (source / "config.json").write_text(
+        json.dumps(
+            {
+                "torch_dtype": "bfloat16",
+                "quantization_config": {"quant_method": "fp8"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    summary = converter.Converter(bailing.BailingMoeV3Format()).convert(
+        source, output
+    )
+    index = _read_index(output)
+
+    assert summary.converted_tensors == 1
+    assert summary.copied_tensors == 1
+    assert set(index["weight_map"]) == {weight_key, direct_key}
+    assert _read_tensor(output, index, weight_key).dtype is torch.bfloat16
+    assert _read_tensor(output, index, direct_key).dtype is torch.bfloat16
+    output_config = json.loads((output / "config.json").read_text())
+    assert output_config["torch_dtype"] == "bfloat16"
+    assert "quantization_config" not in output_config
 
 
 def test_deepseek_v41_preserves_indexer_names_and_official_scale_suffix():
