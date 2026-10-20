@@ -27,6 +27,10 @@ export MULTI_STREAM_MEMORY_REUSE=1
 export WANDB_DISABLED=True
 export TRANSFORMERS_VERBOSITY=error
 
+FLA_NPU_ROOT=/usr/local/python3.11.15/lib/python3.11/site-packages/fla_npu
+export ASCEND_CUSTOM_OPP_PATH=$FLA_NPU_ROOT/opp:$FLA_NPU_ROOT/opp/vendors/fla_npu_transformer:${ASCEND_CUSTOM_OPP_PATH:-}
+export LD_LIBRARY_PATH=$FLA_NPU_ROOT/opp/vendors/fla_npu_transformer/op_api/lib:${LD_LIBRARY_PATH:-}
+
 export NNODES=${NNODES:-1}
 export NODE_RANK=${NODE_RANK:-${RANK:-0}}
 export MASTER_ADDR=${MASTER_ADDR:-127.0.0.1}
