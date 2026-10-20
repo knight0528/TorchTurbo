@@ -8,7 +8,6 @@ MODEL=${MODEL:-/sfs_turbo/models/Ling-3.1-flash-bf16}
 OUTPUT_DIR=${OUTPUT_DIR:-/sfs_turbo/zss02308789/1020/output/ling31-swift-sft}
 DATASET=${DATASET:-/datasets/AM-Thinking-v1-Distilled/science.jsonl}
 SEQ_LEN=${SEQ_LEN:-8192}
-MAX_STEPS=${MAX_STEPS:-1}
 FINETUNING_TYPE=${FINETUNING_TYPE:-lora}
 TT_CONFIG=${TT_CONFIG:-"$(dirname "$0")/ling31_swift_sft.yaml"}
 
@@ -84,7 +83,6 @@ LOG_FILE=$OUTPUT_DIR/rank$NODE_RANK-$(date +%Y%m%d-%H%M%S).log
   --save_strategy no \
   --bf16 true \
   --dataloader_num_workers 2 \
-  --max_steps "$MAX_STEPS" \
   --report_to tensorboard \
   --output_dir "$OUTPUT_DIR" \
   --ddp_timeout 1800000000 \
