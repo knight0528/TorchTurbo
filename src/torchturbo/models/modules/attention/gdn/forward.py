@@ -4,7 +4,9 @@ from collections.abc import Callable
 from typing import Any
 
 import torch
+from torch import nn
 from torch.distributed import ProcessGroup
+from torch.distributed.tensor import DTensor, Partial
 
 from torchturbo.runtime import get_device_runtime
 
@@ -14,6 +16,39 @@ def _slice_param(weight: torch.Tensor, sp_size: int, sp_rank: int) -> torch.Tens
     start = sp_rank * num_channels // sp_size
     stop = (sp_rank + 1) * num_channels // sp_size
     return weight[start:stop]
+
+
+def local_gdn_parameters(
+    module: nn.Module,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Read live TP-local conv1d weight, A_log and dt_bias of a GatedDeltaNet.
+
+    Without tensor parallelism the parameters are returned as is. Under TP the
+    convolution weight is replicated while the module metadata (``key_dim``,
+    ``value_dim``) is TP-local, so the local Q/K/V channel groups are cut out
+    of the full weight; ``A_log`` and ``dt_bias`` are sharded on heads. FSDP
+    restores each parameter's one-dimensional TP mesh before these local
+    kernels. TP admission requires ``conv1d.bias=None``.
+    """
+    weight = module.conv1d.weight
+    if not isinstance(weight, DTensor):
+        return weight, module.A_log, module.dt_bias
+    mesh = weight.device_mesh
+    size, rank = mesh.size(), mesh.get_local_rank()
+    widths = (module.key_dim * size, module.key_dim * size, module.value_dim * size)
+    weight = weight.to_local(grad_placements=[Partial()])
+    segments = weight.split(widths, dim=0)
+    local_weight = torch.cat([segment.chunk(size, dim=0)[rank] for segment in segments])
+    return local_weight, module.A_log.to_local(), module.dt_bias.to_local()
+
+
+def gated_norm(module: nn.Module, core: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+    """Call the GatedDeltaNet output norm with its TP-local (replicated) weight."""
+    norm = module.norm
+    if not isinstance(norm, nn.Module) or not isinstance(norm.weight, DTensor):
+        return norm(core, z)
+    weight = norm.weight.to_local(grad_placements=[Partial()])
+    return torch.func.functional_call(norm, {"weight": weight}, (core, z))
 
 
 def _interleave_qkv_conv_parameter(
@@ -66,6 +101,9 @@ def build_gdn_sp_forward(
         # the full sequence on each rank.
         cu_seq_lens = kwargs.get("cu_seq_lens")
         B, local_T, _ = hidden_states.shape
+        # Head counts and projection widths are TP-local once the module is
+        # tensor-parallelized; read the matching local parameters.
+        conv_weight, A_log, dt_bias = local_gdn_parameters(self_attn)
 
         nk_full, nv_full = self_attn.num_k_heads, self_attn.num_v_heads
         dk, dv = self_attn.head_k_dim, self_attn.head_v_dim
@@ -116,7 +154,7 @@ def build_gdn_sp_forward(
         if sp_size > 1:
             # Depthwise convolution preserves the exchanged [Q, K, grouped-V]
             # order by reordering only the short filters, not the activation.
-            w = self_attn.conv1d.weight
+            w = conv_weight
             wq, wk, wv = torch.split(
                 w, [self_attn.key_dim, self_attn.key_dim, self_attn.value_dim], dim=0
             )
@@ -166,7 +204,7 @@ def build_gdn_sp_forward(
                     nk,
                 )
         else:
-            local_conv_weight = self_attn.conv1d.weight
+            local_conv_weight = conv_weight
             local_conv_bias = self_attn.conv1d.bias
 
         local_qkv, _ = ops.causal_conv1d(
@@ -210,8 +248,8 @@ def build_gdn_sp_forward(
             b, a = packed_ba.unbind(dim=-1)
 
         beta = b.sigmoid()
-        A_log_local = _slice_param(self_attn.A_log, sp_size, sp_rank)
-        dt_bias_local = _slice_param(self_attn.dt_bias, sp_size, sp_rank)
+        A_log_local = _slice_param(A_log, sp_size, sp_rank)
+        dt_bias_local = _slice_param(dt_bias, sp_size, sp_rank)
         g = -A_log_local.float().exp() * F.softplus(a.float() + dt_bias_local)
 
         out, _ = ops.gated_delta_rule(
@@ -231,7 +269,7 @@ def build_gdn_sp_forward(
                 out, seq_dim=1, head_dim=2, sp_group=sp_group, sp_size=sp_size
             )
 
-        out = self_attn.norm(out.reshape(-1, dv), local_z.reshape(-1, dv))
+        out = gated_norm(self_attn, out.reshape(-1, dv), local_z.reshape(-1, dv))
         return self_attn.out_proj(out.reshape(B, local_T, -1))
 
     return sp_forward

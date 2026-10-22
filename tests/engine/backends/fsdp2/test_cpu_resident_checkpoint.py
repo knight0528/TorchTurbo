@@ -26,6 +26,7 @@ from transformers import PretrainedConfig
 from torchturbo.engine.backends.fsdp2.backend import FSDP2Backend
 from torchturbo.engine.backends.fsdp2.checkpoint import weight_loader as loader_module
 from torchturbo.engine.backends.fsdp2.checkpoint.dcp import DcpCheckpoint
+from tests.engine.backends.fsdp2.ownership_helpers import AutoRegisteringOwnership
 from torchturbo.engine.backends.fsdp2.checkpoint.weight_loader import DistParamLoader
 from torchturbo.engine.backends.fsdp2.checkpoint.weight_saver import ShardedParamManager
 from torchturbo.engine.backends.fsdp2.config import CPUOffloadMode
@@ -167,7 +168,7 @@ def _worker(rank, world_size, root):
         loader.load_weights(assign=False)
         assert parameter.data_ptr() == pointer
         torch.testing.assert_close(parameter, expected)
-        checkpoint = DcpCheckpoint(0, 1, mesh["edp"])
+        checkpoint = DcpCheckpoint(0, 1, AutoRegisteringOwnership())
         model.alias = parameter
         native_write = FileSystemWriter.write_data
         cpu_writes = []
@@ -450,7 +451,7 @@ def test_cpu_dcp_file_failure_uses_native_checkpoint_exception(
         torch.ones(3, 2), requires_grad=False, directory=tmp_path
     )
     model.weight.materialize_()
-    checkpoint = DcpCheckpoint(0, 1, checkpoint_group)
+    checkpoint = DcpCheckpoint(0, 1, AutoRegisteringOwnership())
     checkpoint.save_model(model, str(tmp_path / "dcp"))
     for shard in (tmp_path / "dcp").glob("*.distcp"):
         shard.unlink()
