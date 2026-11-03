@@ -1,0 +1,16 @@
+src/torchturbo/models/glm_moe_dsa/mfu.py
+  h_1b879239fece42 68-69,72,75,78-79,81-82,85-93,95,144
+tests/models/glm_moe_dsa/test_mfu.py
+  h_1b879239fece42 70-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5b3b983f1f28b7581577e46871cd3becf44878dc",
+  "prompts": {},
+  "humans": {
+    "h_1b879239fece42": {
+      "author": "zhangshushun <3265779424@qq.com>"
+    }
+  }
+}
