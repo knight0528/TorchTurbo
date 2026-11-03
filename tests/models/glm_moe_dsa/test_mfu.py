@@ -67,6 +67,24 @@ def test_glm_attention_scales_with_index_topk() -> None:
     assert large_flops > small_flops
 
 
+def test_glm_attention_matches_absorbed_mla_formula() -> None:
+    recipe = GlmMoeDsaFlops(_small_config(), ComputeProfile(batch_size=1, seq_length=4))
+
+    rows = 4
+    q_proj = flops.linear_flops(rows, 64, 16)
+    q_proj += flops.linear_flops(rows, 16, 4 * (8 + 4))
+    absorb_q = 2 * rows * 4 * 8 * 8
+    kv_proj = flops.linear_flops(rows, 64, 8 + 4)
+    sparse_qk = 2 * 4 * 4 * 4 * (8 + 4)
+    sparse_pv = 2 * 4 * 4 * 4 * 8
+    uv_proj = 2 * rows * 4 * 8 * 8
+    o_proj = flops.linear_flops(rows, 4 * 8, 64)
+
+    assert recipe._attention_flops_for_seg(4) == (
+        q_proj + absorb_q + kv_proj + sparse_qk + sparse_pv + uv_proj + o_proj
+    )
+
+
 def test_glm_indexer_scores_all_visible_tokens() -> None:
     recipe = GlmMoeDsaFlops(_small_config(), ComputeProfile(batch_size=1, seq_length=4))
 

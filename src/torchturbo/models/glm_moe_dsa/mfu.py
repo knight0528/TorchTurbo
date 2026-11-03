@@ -64,37 +64,35 @@ class GlmMoeDsaFlops(LLMFlops):
 
     def _attention_flops_for_seg(self, seg: int) -> int:
         rows = self.B * seg
-        dhead = self.qk_nope_head_dim + self.qk_rope_head_dim
         sparse_width = self._attention_topk(seg)
+        latent_dim = 0 if self.kv_lora_rank is None else self.kv_lora_rank
+        score_dim = latent_dim + self.qk_rope_head_dim
 
         if self.q_lora_rank is None:
-            q_proj = flops.linear_flops(rows, self.hidden_size, self.num_heads * dhead)
+            q_proj = flops.linear_flops(
+                rows,
+                self.hidden_size,
+                self.num_heads * (self.qk_nope_head_dim + self.qk_rope_head_dim),
+            )
         else:
             q_proj = flops.linear_flops(rows, self.hidden_size, self.q_lora_rank)
-            q_proj += flops.linear_flops(rows, self.q_lora_rank, self.num_heads * dhead)
-
-        if self.kv_lora_rank is None:
-            kv_proj = flops.linear_flops(
+            q_proj += flops.linear_flops(
                 rows,
-                self.hidden_size,
-                self.num_heads * (self.qk_nope_head_dim + self.v_head_dim),
-            )
-        else:
-            kv_proj = flops.linear_flops(
-                rows,
-                self.hidden_size,
-                self.kv_lora_rank + self.qk_rope_head_dim,
-            )
-            kv_proj += flops.linear_flops(
-                rows,
-                self.kv_lora_rank,
-                self.num_heads * (self.qk_nope_head_dim + self.v_head_dim),
+                self.q_lora_rank,
+                self.num_heads * (self.qk_nope_head_dim + self.qk_rope_head_dim),
             )
 
-        qk_product = 2 * self.B * seg * sparse_width * self.num_heads * dhead
-        pv_product = 2 * self.B * seg * sparse_width * self.num_heads * self.v_head_dim
+        absorb_q = 2 * rows * self.num_heads * self.qk_nope_head_dim * latent_dim
+        kv_proj = flops.linear_flops(
+            rows,
+            self.hidden_size,
+            latent_dim + self.qk_rope_head_dim,
+        )
+        qk_product = 2 * self.B * seg * sparse_width * self.num_heads * score_dim
+        pv_product = 2 * self.B * seg * sparse_width * self.num_heads * latent_dim
+        uv_proj = 2 * rows * self.num_heads * latent_dim * self.v_head_dim
         o_proj = flops.linear_flops(rows, self.num_heads * self.v_head_dim, self.hidden_size)
-        return q_proj + kv_proj + qk_product + pv_product + o_proj
+        return q_proj + absorb_q + kv_proj + qk_product + pv_product + uv_proj + o_proj
 
     def _indexer_flops_for_seg(self, seg: int) -> int:
         rows = self.B * seg
@@ -143,7 +141,7 @@ class GlmMoeDsaFlops(LLMFlops):
                 f"attention/dsa ({self.num_layers} layers)",
                 attention_per * self.num_layers,
                 note=(
-                    f"sparse MLA topk={self.index_topk}; per-layer fwd={attention_per:,}"
+                    f"sparse MLA absorb topk={self.index_topk}; per-layer fwd={attention_per:,}"
                 ),
             )
         ]
