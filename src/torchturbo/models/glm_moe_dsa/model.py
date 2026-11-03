@@ -7,6 +7,7 @@ except ImportError:
 
 import torch
 
+from torchturbo.engine.metrics.flops import BaseModelFlops
 from torchturbo.runtime import is_npu_available, get_device_name
 from .modeling_glm_moe_dsa import GlmMoeDsaForCausalLM
 from .configuration_glm_moe_dsa import GlmMoeDsaConfig
@@ -58,6 +59,11 @@ class TurboGlmMoeDsaForCausalLM(TurboModel, GlmMoeDsaForCausalLM):
         from .parallel_plan import get_parallel_plan
 
         return get_parallel_plan(**kwargs)
+
+    def get_flops_class(self) -> type[BaseModelFlops]:
+        from .mfu import GlmMoeDsaFlops
+
+        return GlmMoeDsaFlops
 
     @staticmethod
     def _pre_init_patches(config):
