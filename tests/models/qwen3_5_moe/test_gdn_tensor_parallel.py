@@ -268,7 +268,7 @@ def test_gdn_local_norm_functional_call_survives_nonreentrant_recompute(tmp_path
 
 def _norm_worker(rank, rendezvous):
     from torchturbo.models.qwen3_5_moe import modeling_qwen3_5_moe as modeling
-    from torchturbo.models.qwen3_5_moe.tensor_parallel import gated_norm
+    from torchturbo.models.modules.attention.gdn import gated_norm
 
     dist.init_process_group("gloo", init_method=f"file://{rendezvous}", rank=rank,
                             world_size=2, timeout=timedelta(seconds=90))

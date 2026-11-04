@@ -39,7 +39,7 @@ class MFUEstimator:
         self.flops_cls = flops_cls
         self.model_config = model_config
         self.sp_size = parallel_context["sp"]["sp_size"]
-        self.tp_size = parallel_context.get("tp", {"tp_size": 1})["tp_size"]
+        self.tp_size = parallel_context["tp"]["tp_size"]
         self.device = runtime.current_device()
         self.gradient_checkpointing = engine_config.activation_checkpointing.enabled
         card = engine_config.mfu.card

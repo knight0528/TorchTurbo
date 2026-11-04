@@ -186,14 +186,7 @@ def build_export_config(
     for degree in degrees:
         # Args are the base layer; explicit CLI, environment and file values
         # still take precedence and are checked after config reconstruction.
-        if degree == "sp_size":
-            tt_args.sp_size = saved["parallel_plan"][degree]
-        elif degree == "tp_size":
-            tt_args.tp_size = saved["parallel_plan"][degree]
-        elif degree == "ep_size":
-            tt_args.ep_size = saved["parallel_plan"][degree]
-        else:
-            tt_args.etp_size = saved["parallel_plan"][degree]
+        setattr(tt_args, degree, saved["parallel_plan"][degree])
     tt_args.enable_mtp = saved["mtp"]["enabled"]
     config = build_from_args(tt_args)
     current_degrees = {

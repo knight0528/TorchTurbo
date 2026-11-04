@@ -1,20 +1,21 @@
 """Language-backbone TP styles and local GatedDeltaNet kernel boundaries."""
 
+from functools import partial
+
 import torch
 from torch import nn
 from torch.distributed.device_mesh import DeviceMesh
-from torch.distributed.tensor import (
-    DTensor, Partial, Placement, Replicate, Shard, distribute_tensor,
-)
+from torch.distributed.tensor import DTensor, Partial, Replicate, Shard
 from torch.distributed.tensor.parallel import ColwiseParallel, ParallelStyle, RowwiseParallel, parallelize_module
 
 from torchturbo.engine.tensor_parallel.parallelize import (
     PrepareModuleMetadata,
     SharedHeadNormParallel,
+    distribute_module_parameter as _distribute_parameter,
     register_tensor_parallel_cache_guard,
+    require_tensor_shape,
 )
 from ...parallel import FSDPParallelPlan, TensorParallelValidator
-from ..modules.attention.gdn import gated_norm, local_gdn_parameters
 from ..modules.moe.moe_layer import MoELayer
 from .modeling_qwen3_5_moe import (
     Qwen3_5MoeAttention, Qwen3_5MoeGatedDeltaNet, Qwen3_5MoeSparseMoeBlock,
@@ -24,9 +25,7 @@ from .modeling_qwen3_5_moe import (
 _GDN_METADATA = ("num_k_heads", "num_v_heads", "key_dim", "value_dim", "conv_dim")
 
 
-def _require_shape(name: str, tensor: torch.Tensor, expected: tuple[int, ...]) -> None:
-    if tuple(tensor.shape) != expected:
-        raise ValueError(f"Qwen3.5 TP {name} shape {tuple(tensor.shape)} must be {expected}.")
+_require_shape = partial(require_tensor_shape, "Qwen3.5 TP")
 
 
 def _validate_attention(module: Qwen3_5MoeAttention, tp_size: int, sp_size: int) -> None:
@@ -93,14 +92,6 @@ def _validate_gdn(module: Qwen3_5MoeGatedDeltaNet, tp_size: int, sp_size: int) -
     super_heads = local_k * max(1, sp_size // local_k)
     if super_heads % sp_size or local_v % super_heads:
         raise ValueError("Qwen3.5 TP-local GDN heads are incompatible with SP.")
-
-
-def _distribute_parameter(
-    module: nn.Module, name: str, mesh: DeviceMesh, placement: Placement,
-) -> None:
-    parameter = module.get_parameter(name)
-    distributed = distribute_tensor(parameter, mesh, [placement])
-    module.register_parameter(name, nn.Parameter(distributed, requires_grad=parameter.requires_grad))
 
 
 def _parallelize_gdn(module: Qwen3_5MoeGatedDeltaNet, mesh: DeviceMesh) -> None:

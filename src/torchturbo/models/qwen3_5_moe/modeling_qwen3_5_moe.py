@@ -540,7 +540,7 @@ class Qwen3_5MoeGatedDeltaNet(nn.Module):
         cu_seq_lens: torch.Tensor | None = None,
     ):
         from torchturbo.ops import ops
-        from .tensor_parallel import gated_norm, local_gdn_parameters
+        from ..modules.attention.gdn import gated_norm, local_gdn_parameters
 
         conv_weight, A_log, dt_bias = local_gdn_parameters(self)
         # Set up dimensions for reshapes later

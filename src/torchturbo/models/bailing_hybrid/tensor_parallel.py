@@ -1,13 +1,16 @@
 """Native language-backbone tensor parallelism for Bailing model families."""
 
-import torch
+from functools import partial
+
 from torch import nn
 from torch.distributed.device_mesh import DeviceMesh
-from torch.distributed.tensor import Replicate, Shard, distribute_tensor
+from torch.distributed.tensor import Replicate, Shard
 from torch.distributed.tensor.parallel import ColwiseParallel, ParallelStyle, RowwiseParallel, parallelize_module
 
 from torchturbo.engine.tensor_parallel.parallelize import (
+    distribute_module_parameter as _distribute_parameter,
     register_tensor_parallel_cache_guard,
+    require_tensor_shape,
 )
 from ..modules.moe.experts import GroupedMLP
 from ...parallel import FSDPParallelPlan, TensorParallelValidator
@@ -32,9 +35,7 @@ def _family_types(backbone: nn.Module) -> tuple[type[nn.Module], ...]:
             BailingMoeV3KimiDeltaAttention, BailingMoeV3MLP, BailingMoeV3SparseMoeBlock)
 
 
-def _shape(name: str, tensor: torch.Tensor, expected: tuple[int, ...]) -> None:
-    if tuple(tensor.shape) != expected:
-        raise ValueError(f"Bailing TP {name} shape {tuple(tensor.shape)} must be {expected}.")
+_shape = partial(require_tensor_shape, "Bailing TP")
 
 
 def _linear(name: str, projection: nn.Linear, inputs: int, outputs: int, bias: bool = False) -> None:
@@ -119,14 +120,6 @@ def _kda(module: nn.Module, size: int, sp: int) -> None:
             _linear(prefix + "_a_proj", module.get_submodule(prefix + "_a_proj"), hidden, dim)
             _linear(prefix + "_b_proj", module.get_submodule(prefix + "_b_proj"), dim, width)
     _linear("o_proj", module.o_proj, width, hidden)
-
-
-def _distribute_parameter(module: nn.Module, name: str, mesh: DeviceMesh,
-                          placement: Shard | Replicate) -> None:
-    parameter = module.get_parameter(name)
-    module.register_parameter(name, nn.Parameter(
-        distribute_tensor(parameter, mesh, [placement]), requires_grad=parameter.requires_grad
-    ))
 
 
 class BailingTensorParallelValidator(TensorParallelValidator):

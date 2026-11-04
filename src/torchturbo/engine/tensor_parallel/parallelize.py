@@ -6,8 +6,10 @@ from collections.abc import Mapping
 from copy import deepcopy
 from inspect import signature
 
+import torch
 from torch import nn
 from torch.distributed.device_mesh import DeviceMesh
+from torch.distributed.tensor import Placement, distribute_tensor
 from torch.distributed.tensor.parallel import (
     ParallelStyle,
     SequenceParallel,
@@ -18,6 +20,25 @@ from torchturbo.engine.model_fqn import ModelFQNMap
 from torchturbo.utils.fqn import match_fqn
 
 from .expert import GroupedMLPParallel
+
+
+def distribute_module_parameter(
+    module: nn.Module, name: str, mesh: DeviceMesh, placement: Placement
+) -> None:
+    """Replace a named parameter with its distributed equivalent on one mesh."""
+    parameter = module.get_parameter(name)
+    distributed = distribute_tensor(parameter, mesh, [placement])
+    module.register_parameter(
+        name, nn.Parameter(distributed, requires_grad=parameter.requires_grad)
+    )
+
+
+def require_tensor_shape(
+    label: str, name: str, tensor: torch.Tensor, expected: tuple[int, ...]
+) -> None:
+    """Raise unless a live tensor matches its expected full logical shape."""
+    if tuple(tensor.shape) != expected:
+        raise ValueError(f"{label} {name} shape {tuple(tensor.shape)} must be {expected}.")
 
 
 def register_tensor_parallel_cache_guard(module: nn.Module) -> None:

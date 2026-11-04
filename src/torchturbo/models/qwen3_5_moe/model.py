@@ -276,7 +276,7 @@ class TurboQwen3_5MoeForConditionalGeneration(
             sp_group, sp_size, sp_rank
         )
 
-        if sp_size > 1 or parallel_context.get("tp", {}).get("tp_size", 1) > 1:
+        if sp_size > 1 or parallel_context["tp"]["tp_size"] > 1:
             # Vision keeps flash_attention_2 on its own subconfig and stays
             # on the native flash path; only text attention switches to the
             # registered SP interface.

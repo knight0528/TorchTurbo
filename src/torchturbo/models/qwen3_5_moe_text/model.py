@@ -55,7 +55,7 @@ class TurboQwen3_5MoeTextForCausalLM(TurboModel, Qwen3_5MoeTextForCausalLM):
             sp_group, sp_size, sp_rank
         )
 
-        if sp_size > 1 or parallel_context.get("tp", {}).get("tp_size", 1) > 1:
+        if sp_size > 1 or parallel_context["tp"]["tp_size"] > 1:
             self.register_sp_attention_interface(sp_info)
 
         if sp_size > 1 and self.mtp is not None:
