@@ -1,0 +1,20 @@
+scripts/runs/bailing_v32/swift_ling32_flash_sft.sh
+  h_1b879239fece42 79
+src/torchturbo/adapters/msswift/packing_patch.py
+  h_1b879239fece42 7,66
+src/torchturbo/utils/transformers_utils.py
+  h_1b879239fece42 31-38,40-42,44-55,59-66,68-73,95
+tests/utils/test_transformers_utils.py
+  h_1b879239fece42 72-80,165,185
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f9b265a5d763a0b157273b4b8aea41a65742f49f",
+  "prompts": {},
+  "humans": {
+    "h_1b879239fece42": {
+      "author": "zhangshushun <3265779424@qq.com>"
+    }
+  }
+}
