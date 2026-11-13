@@ -1,0 +1,20 @@
+src/torchturbo/adapters/msswift/__init__.py
+  h_1b879239fece42 8
+src/torchturbo/adapters/msswift/inputs_bridging.py
+  h_1b879239fece42 14
+src/torchturbo/adapters/msswift/utils.py
+  h_1b879239fece42 11-13,23-25,70-159
+tests/adapters/msswift/test_inputs_bridging.py
+  h_1b879239fece42 20-24,166-209
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8facf36dd423ba2f317e787b47c52105a3b424e5",
+  "prompts": {},
+  "humans": {
+    "h_1b879239fece42": {
+      "author": "zhangshushun <3265779424@qq.com>"
+    }
+  }
+}
