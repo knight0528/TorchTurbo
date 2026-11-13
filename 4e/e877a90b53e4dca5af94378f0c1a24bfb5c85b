@@ -1,0 +1,32 @@
+scripts/runs/bailing_v32/install_swift_deps.sh
+  h_1b879239fece42 1-7
+scripts/runs/bailing_v32/swift_ling32_flash_sft.sh
+  h_1b879239fece42 1-131
+scripts/runs/bailing_v32/swift_ling32_flash_sft.yaml
+  h_1b879239fece42 1-29
+src/torchturbo/adapters/msswift/__init__.py
+  h_1b879239fece42 8,42
+src/torchturbo/adapters/msswift/inputs_bridging.py
+  h_1b879239fece42 14,104-109
+src/torchturbo/adapters/msswift/packing_patch.py
+  h_1b879239fece42 1-105
+src/torchturbo/utils/transformers_utils.py
+  h_1b879239fece42 6-7,9,12,16-59,73,77-94,97-106
+tests/adapters/msswift/test_inputs_bridging.py
+  h_1b879239fece42 155-160
+tests/adapters/msswift/test_packing_patch.py
+  h_1b879239fece42 1-53
+tests/utils/test_transformers_utils.py
+  h_1b879239fece42 34-38,140-198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4ee877a90b53e4dca5af94378f0c1a24bfb5c85b",
+  "prompts": {},
+  "humans": {
+    "h_1b879239fece42": {
+      "author": "zhangshushun <3265779424@qq.com>"
+    }
+  }
+}
