@@ -1,0 +1,31 @@
+src/torchturbo/adapters/msswift/utils.py
+  h_1b879239fece42 11-12,66-126
+README.md
+  h_1b879239fece42 376
+tests/utils/test_transformers_utils.py
+  h_1b879239fece42 34-38,72-80,149-197
+src/torchturbo/engine/args.py
+  h_1b879239fece42 160-161,198,670-679
+src/torchturbo/adapters/msswift/__init__.py
+  h_1b879239fece42 8,42
+src/torchturbo/adapters/msswift/inputs_bridging.py
+  h_1b879239fece42 14,104-109
+tests/engine/test_args.py
+  h_1b879239fece42 232-246
+tests/adapters/msswift/test_inputs_bridging.py
+  h_1b879239fece42 6-7,21-26,162-210
+src/torchturbo/utils/transformers_utils.py
+  h_1b879239fece42 6-7,9,12,16,20-21,25-42,45-54,57,64-75,78-82
+  h_1b879239fece42 55-56,58-63,76-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "09a2c084c989ff72d37c43fce340d4f44b917c03",
+  "prompts": {},
+  "humans": {
+    "h_1b879239fece42": {
+      "author": "zhangshushun <3265779424@qq.com>"
+    }
+  }
+}
