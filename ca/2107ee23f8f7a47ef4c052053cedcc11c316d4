@@ -1,0 +1,18 @@
+src/torchturbo/ops/providers/npu/kda.py
+  h_1b879239fece42 5-6,18-40,58,62-80,89,122-129,204,241-272
+tests/ops/npu/test_kda.py
+  h_1b879239fece42 1-62
+tests/ops/providers/npu/test_kda_batching.py
+  h_1b879239fece42 1-321
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ca2107ee23f8f7a47ef4c052053cedcc11c316d4",
+  "prompts": {},
+  "humans": {
+    "h_1b879239fece42": {
+      "author": "zhangshushun <3265779424@qq.com>"
+    }
+  }
+}
