@@ -1,0 +1,14 @@
+tests/utils/test_transformers_utils.py
+  h_1b879239fece42 99-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "dc79ebc9d5db70e322521e855952abe8719c81d7",
+  "prompts": {},
+  "humans": {
+    "h_1b879239fece42": {
+      "author": "zhangshushun <3265779424@qq.com>"
+    }
+  }
+}
