@@ -1,0 +1,14 @@
+src/torchturbo/adapters/msswift/__init__.py
+  h_1b879239fece42 8,41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "fd8616942ee5979bb9602622ab601409a26fd596",
+  "prompts": {},
+  "humans": {
+    "h_1b879239fece42": {
+      "author": "zhangshushun <3265779424@qq.com>"
+    }
+  }
+}
