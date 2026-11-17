@@ -1,0 +1,28 @@
+src/torchturbo/__init__.py
+  h_1b879239fece42 53,147-148,155,170
+src/torchturbo/utils/transformers_utils.py
+  h_1b879239fece42 1-37
+tests/integration/test_integration.py
+  h_1b879239fece42 81-105
+tests/models/bailing_moe_v3_vl/test_lf_image_parity.py
+  h_1b879239fece42 21-23
+tests/models/bailing_moe_v3_vl/test_lf_integration.py
+  h_1b879239fece42 33,36-37
+tests/models/bailing_moe_v3_vl/test_swift_integration.py
+  h_1b879239fece42 32,34-35
+tests/utils/__init__.py
+  h_1b879239fece42 1
+tests/utils/test_transformers_utils.py
+  h_1b879239fece42 1-153
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5785cc0267d82a9f4ee6ef3ac6077b2be51c4cbc",
+  "prompts": {},
+  "humans": {
+    "h_1b879239fece42": {
+      "author": "zhangshushun <3265779424@qq.com>"
+    }
+  }
+}
