@@ -1,0 +1,16 @@
+src/torchturbo/utils/transformers_utils.py
+  h_1b879239fece42 15-17,21,24-37
+tests/utils/test_transformers_utils.py
+  h_1b879239fece42 134
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "fa56551c7927a9a058333ccf9436b654edc0015f",
+  "prompts": {},
+  "humans": {
+    "h_1b879239fece42": {
+      "author": "zhangshushun <3265779424@qq.com>"
+    }
+  }
+}
