@@ -1,0 +1,14 @@
+tests/ops/npu/test_kda.py
+  h_1b879239fece42 21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c7ea2c3a86924451d9f77639fad02a0e3148c06a",
+  "prompts": {},
+  "humans": {
+    "h_1b879239fece42": {
+      "author": "zhangshushun <3265779424@qq.com>"
+    }
+  }
+}
